@@ -93,6 +93,30 @@ const deleteEmployeesDetail = async (req, res) => {
         res.render("400");
     }
 }
+
+const updateEmployeeDetails = async (req, res) => {
+    try {
+        pool.getConnection((err, connection) => {
+            if (err) throw err
+            console.log(`connected as id ${connection.threadId}`)
+
+            connection.query('DELETE  from employes WHERE id = ?', [req.params.id], (err, rows) => {
+                connection.release() // return to connection pool
+                if (!err) {
+                    res.send(`employee with the Record ID : ${[req.params.id]} has been deleted`)
+                }
+                else {
+                    console.log(err)
+                }
+            })
+        })
+    }
+    catch (error) {
+        console.error(error);
+        res.render("400");
+    }
+}
+
 module.exports = {
     createEmployee,
     getEmployeesDetails,
