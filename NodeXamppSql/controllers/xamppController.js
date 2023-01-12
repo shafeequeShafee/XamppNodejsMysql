@@ -99,11 +99,12 @@ const updateEmployeeDetails = async (req, res) => {
         pool.getConnection((err, connection) => {
             if (err) throw err
             console.log(`connected as id ${connection.threadId}`)
-
-            connection.query('DELETE  from employes WHERE id = ?', [req.params.id], (err, rows) => {
+            //const params = req.body
+            const {id, name, department,description,image}= req.body
+            connection.query('UPDATE employes SET name = ? WHERE id = ?', [name,id], (err, rows) => {
                 connection.release() // return to connection pool
                 if (!err) {
-                    res.send(`employee with the Record ID : ${[req.params.id]} has been deleted`)
+                    res.send(`employee with the Record id : ${id} has been updated`)
                 }
                 else {
                     console.log(err)
