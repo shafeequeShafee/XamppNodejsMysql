@@ -1,5 +1,5 @@
 
-const pool = require('../dbConnection2')
+const pool = require('../config/dbConnection2')
 
 const createEmployee = async (req, res) => {
     try {
@@ -101,6 +101,7 @@ const updateEmployeeDetails = async (req, res) => {
             console.log(`connected as id ${connection.threadId}`)
             //const params = req.body
             const {id, name, department,description,image}= req.body
+            //'UPDATE employes SET name = ?, description = ?  WHERE id = ?' [name , description , id]
             connection.query('UPDATE employes SET name = ? WHERE id = ?', [name,id], (err, rows) => {
                 connection.release() // return to connection pool
                 if (!err) {
