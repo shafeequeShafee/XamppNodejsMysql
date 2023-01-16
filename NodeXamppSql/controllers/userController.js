@@ -4,58 +4,71 @@ const dotenv = require('dotenv');
 dotenv.config();
 const { sign } = require("jsonwebtoken")
 const bcrypt = require('bcrypt');
+const AppError=require('../utils.js/appError')
 const { create, getUsers, getUserByUserId, updateUser, deleteUser, getUserByUserEmail } = require('../service/userService')
 module.exports = {
-    createUser: (req, res) => {
-        const body = req.body
-        const saltRounds = parseInt(process.env.SALT_ROUNDS);
-        bcrypt.genSalt(saltRounds, function (err, salt) {
-            bcrypt.hash(body.password, salt, function (err, hash) {
-                if (err) return res.json({ error: true });
-                body.password = hash
-                create(body, (err, results) => {
-                    if (err) {
-                        console.log(err);
-                        return res.status(500).json({
-                            success: 0,
-                            message: "Database Connection error"
-                        });
-                    }
-                    return res.status(200).json({
-                        success: 1,
-                        data: results
+
+    //////  callback /////////
+
+    createUser: (req, res, next) => {
+        try {
+            const body = req.body
+            const saltRounds = parseInt(process.env.SALT_ROUNDS);
+            bcrypt.genSalt(saltRounds, function (err, salt) {
+                bcrypt.hash(body.password, salt, function (err, hash) {
+                    if (err) return res.json({ error: true });
+                    body.password = hash
+                    create(body, (err, results) => {
+                        if (err) {
+                            console.log(err);
+                            return res.status(500).json({
+                                success: 0,
+                                message: "Database Connection error"
+                            });
+                        }
+                        return res.status(200).json({
+                            success: 1,
+                            data: results
+                        })
+
                     })
 
-                })
 
-
-            });
-        });
-    },
-
-    getUserByUserId: (req, res) => {
-        const id = req.params.id;
-        getUserByUserId(id, (err, results) => {
-            if (err) {
-                console.log(err);
-                return res.status(500).json({
-                    success: 0,
-                    message: "Database Connection error"
                 });
-            }
-            if (!results) {
-                return res.status(404).json({
-                    success: 0,
-                    message: "Record is not found"
-                })
+            });
+        }
+        catch (err) {
+            err.statusCode = 404
+            next(err)
+        }
+
+    },
+ 
+    /////////////   Promise   /////////////
+    getUserByUserId: async(req, res,next) => {
+        try{
+            const id = req.params.id;
+            const result = await getUserByUserId(id)
+            if (!result) {
+                // return res.status(404).json({
+                //     success: 0,
+                //     message: "Record is not found"
+                // })
+                // const err = new Error ("Record Not found")
+                // err.statusCode ==404
+                // throw err
+
+                throw new AppError('Record not found', 404)
             }
             return res.status(200).json({
                 success: 1,
-                data: results
+                data: result
             })
-
-
-        })
+        }
+        catch(err){
+           next(err)
+        }
+       
     },
 
     getUsers: (req, res) => {
@@ -104,7 +117,7 @@ module.exports = {
                             message: "Record is not found"
                         })
                     }
-        
+
                     return res.status(200).json({
                         success: 1,
                         message: 'updated successfully'
@@ -113,7 +126,7 @@ module.exports = {
 
             });
         });
-       
+
     },
 
     deleteUser: (req, res) => {

@@ -33,16 +33,21 @@ module.exports = {
         );
     },
 
-    getUserByUserId: (id, callBack) => {
-        pool.query(`select id, firstName, lastName, gender, email, number from registration where id = ?`,
+    //////////  promise ///////////
+
+    getUserByUserId: (id) => {
+      return  new Promise((resolve,reject)=>{
+            pool.query(`select id, firstName, lastName, gender, email, number from registration where id = ?`,
             [id],
             (error, results, fields) => {
                 if (error) {
-                    return callBack(error)
+                    return reject(error)
                 }
-                return callBack(null, results[0])
+                return resolve(results[0])
             }
         );
+        })
+        
     },
 
     updateUser: (data, callBack) => {
