@@ -1,1 +1,0 @@
-for sql => npm i mysql

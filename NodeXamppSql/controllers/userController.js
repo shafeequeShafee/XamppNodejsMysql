@@ -12,7 +12,7 @@ module.exports = {
         bcrypt.genSalt(saltRounds, function (err, salt) {
             bcrypt.hash(body.password, salt, function (err, hash) {
                 if (err) return res.json({ error: true });
-                body.password =hash
+                body.password = hash
                 create(body, (err, results) => {
                     if (err) {
                         console.log(err);
@@ -28,7 +28,6 @@ module.exports = {
 
                 })
 
-                return body.password = hash
 
             });
         });
@@ -86,28 +85,35 @@ module.exports = {
 
     updateUser: (req, res) => {
         const body = req.body;
-        const salt = genSaltSync(10);
-        body.password = hashSync(body.password, salt);
-        updateUser(body, (err, results) => {
-            if (err) {
-                console.log(err);
-                return res.status(500).json({
-                    success: 0,
-                    message: "Database Connection error"
-                });
-            }
-            if (results.affectedRows <= 0) {
-                return res.status(404).json({
-                    success: 0,
-                    message: "Record is not found"
+        const saltRounds = parseInt(process.env.SALT_ROUNDS);
+        bcrypt.genSalt(saltRounds, function (err, salt) {
+            bcrypt.hash(body.password, salt, function (err, hash) {
+                if (err) return res.json({ error: true });
+                body.password = hash
+                updateUser(body, (err, results) => {
+                    if (err) {
+                        console.log(err);
+                        return res.status(500).json({
+                            success: 0,
+                            message: "Database Connection error"
+                        });
+                    }
+                    if (results.affectedRows <= 0) {
+                        return res.status(404).json({
+                            success: 0,
+                            message: "Record is not found"
+                        })
+                    }
+        
+                    return res.status(200).json({
+                        success: 1,
+                        message: 'updated successfully'
+                    })
                 })
-            }
 
-            return res.status(200).json({
-                success: 1,
-                message: 'updated successfully'
-            })
-        })
+            });
+        });
+       
     },
 
     deleteUser: (req, res) => {
@@ -151,29 +157,30 @@ module.exports = {
                     message: "invalid email or password"
                 })
             }
-            bcrypt.compare(body.password, results.password, function(err, result) {
+            bcrypt.compare(body.password, results.password, function (err, result) {
                 // result == true
                 console.log(result)
+                if (result) {
+                    results.password = undefined;
+                    // i dont need to pass the password in the jsonwebtoken parameter
+                    const jsonwebtoken = sign({ result: results }, process.env.JSONWEBTOKEN_KEY, {
+                        expiresIn: "1h"
+                    })
+                    return res.status(200).json({
+                        success: 1,
+                        message: "login successfully",
+                        token: jsonwebtoken
+                    })
+                }
+                else {
+                    return res.status(401).json({
+                        success: 0,
+                        data: "invalid email or password"
+                    })
+                }
             });
 
-            // if(result){
-            //     results.password= undefined;
-            //     // i dont need to pass the password in the jsonwebtoken parameter
-            //     const jsonwebtoken = sign({result:results},process.env.JSONWEBTOKEN_KEY,{
-            //         expiresIn:"1h"
-            //     })
-            //     return res.status(200).json({
-            //        success:1,
-            //        message:"login successfully",
-            //        token:jsonwebtoken
-            //     })
-            // }
-            // else{
-            //     return res.status(401).json({
-            //         success:0,
-            //         data:"invalid email or password"
-            //     })
-            // }
+
 
         })
     },
